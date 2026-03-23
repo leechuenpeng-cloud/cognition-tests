@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simple Cognition Tests - Sleepwell Laboratory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --theme: #C8102E; --normal: #16a34a; --abnormal: #000000; }
+        body {
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            overscroll-behavior: none;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        .bg-theme { background-color: var(--theme); }
+        .text-theme { color: var(--theme); }
+        
+        .node {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 18px; position: absolute;
+            cursor: pointer; z-index: 20; background: white;
+            border: 2px solid #334155; color: #1e293b;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .node-correct { background-color: var(--theme) !important; border-color: var(--theme) !important; color: white !important; pointer-events: none; }
+        .node-error { background-color: #000 !important; border-color: #000 !important; color: white !important; animation: shake 0.4s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+        #svg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
+        .btn-primary {
+            background-color: var(--theme); color: white; padding: 1.25rem;
+            border-radius: 0.75rem; font-weight: 800; width: 100%;
+            transition: opacity 0.2s; text-transform: uppercase; letter-spacing: 0.1em;
+            box-shadow: 0 10px 25px -5px rgba(200, 16, 46, 0.2);
+        }
+        .btn-primary:active { opacity: 0.8; transform: scale(0.98); }
+
+        #save-overlay, #countdown-overlay { display: none; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #save-overlay { background: rgba(0,0,0,0.95); }
+        #countdown-overlay { background: rgba(255,255,255,0.75); backdrop-blur: 5px; pointer-events: none; }
+        
+        #countdown-text { font-size: 140px; font-weight: 900; color: var(--theme); animation: pulseIn 1s infinite; }
+        @keyframes pulseIn { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+
+        .status-normal { background-color: var(--normal) !important; color: white !important; border: none !important; }
+        .status-abnormal { background-color: var(--abnormal) !important; color: white !important; border: none !important; }
+
+        .demo-line { stroke: var(--theme); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawLine 1.5s ease-in-out infinite; }
+        @keyframes drawLine { 0% { stroke-dashoffset: 200; opacity: 0; } 30% { opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+    </style>
+</head>
+<body class="font-sans text-slate-900 bg-white">
+
+    <!-- SCREEN 0: LANDING PAGE -->
+    <div id="screen-intro" class="fixed inset-0 z-[60] flex flex-col bg-white overflow-y-auto">
+        <div class="w-full max-w-xl mx-auto py-10 px-6 flex flex-col items-center">
+            
+            <!-- Logo Section -->
+            <div class="mb-6 w-full flex justify-center">
+                <img src="image.png" alt="Sleepwell Laboratory" class="max-w-full h-auto max-h-48 object-contain" />
+            </div>
+
+            <div class="w-24 h-1 bg-theme rounded-full mb-6 opacity-20"></div>
+
+            <h1 class="text-3xl font-black tracking-tight mb-1 leading-tight uppercase italic text-center text-slate-800">Simple Cognition Tests</h1>
+            <h2 class="text-xl font-bold tracking-tight mb-10 text-slate-400 text-center uppercase font-sans">简易认知功能测验</h2>
+            
+            <div class="space-y-4 w-full text-sm">
+                <!-- Point 1 -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <p class="font-bold text-slate-800 uppercase text-xs tracking-widest mb-2 flex items-center">
+                        <span class="w-2 h-2 bg-theme rounded-full mr-2"></span>
+                        Brain Fog & Speed / 脑雾与反应速度 [1]
+                    </p>
+                    <p class="text-slate-600 leading-relaxed">
+                        Sleep Apnea (OSA) interrupts your sleep and breathing, which often leads to "brain fog." These tests check how fast your mind reacts and how well you can switch between tasks.
+                    </p>
+                    <p class="mt-3 text-[13px] text-slate-400 italic font-sans leading-snug">
+                        睡眠呼吸暂停 (OSA) 会干扰您的睡眠和呼吸，常导致“脑雾”。这些测验测量您大脑的反应速度以及在不同任务间切换的灵活性。
+                    </p>
+                </div>
+                
+                <!-- Point 2 -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <p class="font-bold text-slate-800 uppercase text-xs tracking-widest mb-2 flex items-center">
+                        <span class="w-2 h-2 bg-theme rounded-full mr-2"></span>
+                        Recovery / 改善与恢复 [2]
+                    </p>
+                    <p class="text-slate-600 leading-relaxed">
+                        The good news: Treating sleep apnea (like with CPAP) helps clear the fog and restores your mental flexibility as your brain gets the rest it needs.
+                    </p>
+                    <p class="mt-3 text-[13px] text-slate-400 italic font-sans leading-snug">
+                        好消息是：治疗睡眠呼吸暂停（如使用 CPAP）有助于拨开脑雾。随着大脑获得所需的休息，您的思维灵活性会逐渐恢复。
+                    </p>
+                </div>
+            </div>
+
+            <button onclick="goToSetup()" class="btn-primary mt-10">
+                Start / 开始
+            </button>
+
+            <!-- Footnotes -->
+            <div class="mt-12 w-full pt-6 border-t border-slate-100 text-[10px] text-slate-400 leading-relaxed space-y-2 mb-8">
+                <p>[1] Decary A, et al. Sleep. 2000;23(3):369-381. (Cognitive deficits in sleep apnea sufferers / 睡眠呼吸暂停患者的认知缺陷研究)</p>
+                <p>[2] Zimmerman ME, et al. Sleep Med Rev. 2011;15(1):19-30. (Recovery of brain function after treatment / 治疗后大脑功能的恢复研究)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 1: PROFILE SETUP -->
+    <div id="screen-setup" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-white">
+        <div class="w-full max-w-sm px-4 text-center">
+            <h1 class="text-3xl font-black tracking-tight mb-1 uppercase italic text-slate-800">Basic Profile</h1>
+            <h2 class="text-lg font-bold tracking-tight mb-12 text-slate-400 uppercase font-sans">基础信息</h2>
+            
+            <div class="space-y-8 text-left">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Your Age / 年龄</label>
+                    <input type="number" id="input-age" value="45" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-theme outline-none font-bold text-xl shadow-inner text-center">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Education / 教育程度</label>
+                    <select id="input-edu" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-theme outline-none font-bold text-lg shadow-inner text-center">
+                        <option value="low">Less than 12 Years / 12年以下</option>
+                        <option value="high" selected>12+ Years / 12年以上</option>
+                    </select>
+                </div>
+                <button onclick="showInstructions('A')" class="btn-primary text-lg mt-4">Confirm / 确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: INSTRUCTIONS -->
+    <div id="screen-instr" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-50">
+        <div class="bg-white w-full max-w-sm p-8 rounded-3xl shadow-xl border border-slate-200 flex flex-col h-[90vh] max-h-[720px]">
+            <h2 id="instr-title" class="text-xl font-black text-slate-800 uppercase italic">Instructions / 说明</h2>
+            <p id="instr-text" class="text-xs text-slate-500 mb-6 leading-relaxed"></p>
+            
+            <div class="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100 overflow-hidden h-36 flex items-center justify-center">
+                <svg id="demo-svg-unified" viewBox="0 0 100 100" class="w-full h-full"></svg>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-6">
+                <p class="text-[10px] font-bold text-amber-800 leading-snug">
+                    Tip: The test can be resetted using the button in the top right corner.<br>
+                    提示：您可以点击右上角的按钮随时重新开始测验。
+                </p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto mb-6 pr-2">
+                <div id="instr-citation" class="text-[9px] text-slate-400 leading-normal italic border-t pt-4"></div>
+            </div>
+
+            <button id="btn-start-test" class="btn-primary shrink-0 text-sm">I am Ready / 我准备好了</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: TEST AREA -->
+    <div id="screen-test" class="hidden fixed inset-0 flex flex-col bg-white">
+        <header class="h-16 border-b flex items-center justify-between px-6 z-40 bg-white/95">
+            <div class="flex flex-col">
+                <span id="test-label" class="text-[10px] font-black text-theme uppercase tracking-widest">Part A</span>
+                <span id="test-instr-header" class="text-[9px] font-bold text-slate-400"></span>
+            </div>
+            <div id="timer" class="font-mono text-2xl font-black">0.00s</div>
+            <button onclick="initTest(currentMode)" class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 py-2 border rounded-lg hover:bg-slate-50 transition-colors">Reset / 重置</button>
+        </header>
+        <main id="game-container" class="relative flex-1 overflow-hidden bg-[#fafafa]">
+            <svg id="svg-canvas"></svg>
+            <div id="nodes-layer"></div>
+        </main>
+        <div id="countdown-overlay"><div id="countdown-text">3</div></div>
+    </div>
+
+    <!-- SCREEN 4: RESULTS REPORT -->
+    <div id="screen-results" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/10 backdrop-blur-sm overflow-y-auto">
+        <div id="capture-area" class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-100 my-auto">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h2 id="res-title" class="text-xl font-black italic uppercase text-slate-800 tracking-tighter">Report / 报告</h2>
+                    <p id="res-timestamp" class="text-[9px] font-bold text-slate-400 uppercase mt-2 hidden">--</p>
+                </div>
+                <div id="res-icon" class="w-12 h-12 flex items-center justify-center rounded-full text-white font-black text-2xl shadow-lg transition-colors">!</div>
+            </div>
+
+            <div id="stats-summary" class="grid grid-cols-2 gap-4 mb-6"></div>
+            
+            <div id="norm-box" class="space-y-4 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Peer Comparison / 同龄人比较</span>
+                    <span id="res-percentile-num" class="text-2xl font-black text-theme">--</span>
+                </div>
+                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div id="res-percentile-bar" class="h-full bg-theme transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div id="percentile-explanation" class="text-[10px] text-slate-600 leading-normal mt-3 font-sans"></div>
+            </div>
+
+            <div id="action-box" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- SCREEN 5: EXPORT PREVIEW -->
+    <div id="save-overlay">
+        <img id="preview-img" src="" alt="Test Result">
+        <p class="text-white font-bold text-center mb-6 px-10">Long-press image to save report<br><span class="text-xs font-normal opacity-70">长按图片并选择“存储图像”</span></p>
+        <button onclick="closeOverlay()" class="px-8 py-3 bg-white text-black font-black rounded-full uppercase tracking-widest text-[10px]">Close / 关闭</button>
+    </div>
+
+    <script>
+        const THEME = "#C8102E";
+        const NORMS = {
+            low_edu: {
+                A: [{min:18,max:24,mean:22.9,sd:7.2},{min:25,max:34,mean:24.6,sd:5.8},{min:35,max:44,mean:28.5,sd:9.3},{min:45,max:54,mean:31.7,sd:9.6},{min:55,max:59,mean:35.8,sd:9.5},{min:60,max:64,mean:37.1,sd:11.2},{min:65,max:69,mean:41.5,sd:14.5},{min:70,max:74,mean:44.3,sd:13.5},{min:75,max:79,mean:51.5,sd:16.4},{min:80,max:84,mean:58.4,sd:20.2},{min:85,max:99,mean:63.8,sd:19.3}],
+                B: [{min:18,max:24,mean:48.9,sd:13.4},{min:25,max:34,mean:50.6,sd:12.3},{min:35,max:44,mean:58.4,sd:16.4},{min:45,max:54,mean:63.7,sd:14.4},{min:55,max:59,mean:73.2,sd:18.6},{min:60,max:64,mean:83.1,sd:27.2},{min:65,max:69,mean:100.4,sd:39.4},{min:70,max:74,mean:109.3,sd:38.2},{min:75,max:79,mean:130.4,sd:45.3},{min:80,max:84,mean:152.3,sd:58.2},{min:85,max:99,mean:184.2,sd:62.4}]
+            },
+            high_edu: {
+                A: [{min:18,max:24,mean:19.1,sd:6.2},{min:25,max:34,mean:20.4,sd:6.3},{min:35,max:44,mean:23.3,sd:6.2},{min:45,max:54,mean:26.5,sd:7.4},{min:55,max:59,mean:27.6,sd:8.7},{min:60,max:64,mean:31.0,sd:9.7},{min:65,max:69,mean:33.8,sd:9.8},{min:70,max:74,mean:35.2,sd:9.3},{min:75,max:79,mean:40.2,sd:11.4},{min:80,max:84,mean:46.9,sd:14.1},{min:85,max:99,mean:55.4,sd:16.4}],
+                B: [{min:18,max:24,mean:41.2,sd:11.2},{min:25,max:34,mean:43.1,sd:10.4},{min:35,max:44,mean:50.4,sd:12.3},{min:45,max:54,mean:56.1,sd:13.4},{min:55,max:59,mean:61.2,sd:16.3},{min:60,max:64,mean:68.4,sd:18.4},{min:65,max:69,mean:79.2,sd:24.3},{min:70,max:74,mean:86.4,sd:28.3},{min:75,max:79,mean:100.2,sd:35.4},{min:80,max:84,mean:121.2,sd:48.2},{min:85,max:99,mean:151.3,sd:55.3}]
+            }
+        };
+
+        const SEQ_A = Array.from({length: 25}, (_, i) => (i + 1).toString());
+        const SEQ_B = ['1','A','2','B','3','C','4','D','5','E','6','F','7','G','8','H','9','I','10','J','11','K','12','L','13'];
+
+        let currentMode = 'A', currentStep = 0, errors = 0, startTime = null, timerInt = null, lastPos = null, isInteractive = false;
+        let sessionData = { A: null, B: null };
+
+        function goToSetup() { document.getElementById('screen-intro').classList.add('hidden'); document.getElementById('screen-setup').classList.remove('hidden'); }
+        
+        function showInstructions(mode) {
+            currentMode = mode;
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            const instr = document.getElementById('screen-instr');
+            instr.classList.remove('hidden');
+            const demoSvg = document.getElementById('demo-svg-unified'); demoSvg.innerHTML = '';
+            
+            if (mode === 'A') {
+                document.getElementById('instr-title').innerHTML = "Instructions / 说明: Part A";
+                document.getElementById('instr-text').innerHTML = "Connect circles 1 to 25 as fast as you can. Avoid mistakes.<br>请尽快按数字顺序 (1, 2, 3...) 连接圆圈，尽量避免错误。";
+                document.getElementById('instr-citation').innerHTML = `<strong>Note:</strong> Measures basic reaction and scanning speed.<br><em>Ref: Naëgelé B, (2006). J Sleep Res.</em>`;
+                createIllustration(['1','2','3','4']);
+            } else {
+                document.getElementById('instr-title').innerHTML = "Instructions / 说明: Part B";
+                document.getElementById('instr-text').innerHTML = "Alternate between numbers and letters (1-A-2-B...).<br>请尽快交替连接数字和字母 (1-A-2-B...)。";
+                document.getElementById('instr-citation').innerHTML = `<strong>Note:</strong> Measures how easily your brain shifts gears.<br><em>Ref: Decary A, (2000). Sleep.</em>`;
+                createIllustration(['1','A','2','B']);
+            }
+        }
+
+        function createIllustration(seq) {
+            const svg = document.getElementById('demo-svg-unified');
+            const coords = [{x:20,y:20}, {x:80,y:30}, {x:70,y:80}, {x:25,y:75}];
+            coords.forEach((c, i) => {
+                if(i > 0) {
+                    const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    l.setAttribute("x1", coords[i-1].x); l.setAttribute("y1", coords[i-1].y);
+                    l.setAttribute("x2", c.x); l.setAttribute("y2", c.y); l.setAttribute("class", "demo-line");
+                    l.style.animationDelay = (i-1)*0.8+'s'; svg.appendChild(l);
+                }
+            });
+            coords.forEach((c, i) => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circ.setAttribute("cx", c.x); circ.setAttribute("cy", c.y); circ.setAttribute("r", 9);
+                circ.setAttribute("fill", "white"); circ.setAttribute("stroke", "#cbd5e1");
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txt.setAttribute("x", c.x); txt.setAttribute("y", c.y+2); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("dominant-baseline", "middle"); txt.setAttribute("font-size", "7"); txt.setAttribute("font-weight", "bold"); txt.textContent = seq[i];
+                g.appendChild(circ); g.appendChild(txt); svg.appendChild(g);
+            });
+        }
+
+        document.getElementById('btn-start-test').onclick = () => { 
+            document.getElementById('screen-instr').classList.add('hidden'); 
+            document.getElementById('screen-test').classList.remove('hidden'); 
+            initTest(currentMode); 
+        };
+
+        function initTest(mode) {
+            if (timerInt) clearInterval(timerInt);
+            currentStep = 0; errors = 0; lastPos = null; isInteractive = false;
+            document.getElementById('timer').textContent = "0.00s";
+            document.getElementById('nodes-layer').innerHTML = ''; document.getElementById('svg-canvas').innerHTML = '';
+            document.getElementById('test-label').textContent = `Part ${mode}`;
+            document.getElementById('test-instr-header').textContent = mode === 'A' ? "1 to 25 / 1到25" : "1-A-2-B...";
+            const sequence = mode === 'A' ? SEQ_A : SEQ_B;
+            const rect = document.getElementById('game-container').getBoundingClientRect();
+            const radius = 24, safe = 70, placed = [];
+            for (let i = 0; i < 25; i++) {
+                let x, y, overlap, tries = 0;
+                do { overlap = false; x = radius+25+Math.random()*(rect.width-radius*2-50); y = radius+25+Math.random()*(rect.height-radius*2-50); for (let p of placed) { if (Math.hypot(x-p.x, y-p.y) < safe) { overlap = true; break; } } tries++; } while (overlap && tries < 9000);
+                placed.push({ x, y });
+                const el = document.createElement('div'); el.className = 'node'; el.textContent = sequence[i]; el.style.left = `${x-radius}px`; el.style.top = `${y-radius}px`;
+                el.onpointerdown = (e) => { e.preventDefault(); if(isInteractive) handleHit(i, x, y, el); };
+                document.getElementById('nodes-layer').appendChild(el);
+            }
+            runCountdown();
+        }
+
+        function runCountdown() {
+            const overlay = document.getElementById('countdown-overlay'); const txt = document.getElementById('countdown-text');
+            overlay.style.display = 'flex'; let count = 3; txt.textContent = count;
+            const interval = setInterval(() => { count--; if(count > 0) txt.textContent = count; else if(count === 0) txt.textContent = "GO!"; else { clearInterval(interval); overlay.style.display = 'none'; isInteractive = true; startTimer(); } }, 1000);
+        }
+
+        function startTimer() { startTime = Date.now(); timerInt = setInterval(() => { document.getElementById('timer').textContent = ((Date.now() - startTime)/1000).toFixed(2) + "s"; }, 50); }
+
+        function handleHit(idx, x, y, el) {
+            if (idx === currentStep) {
+                el.classList.add('node-correct');
+                if (lastPos) { const l = document.createElementNS("http://www.w3.org/2000/svg", "line"); l.setAttribute("x1", lastPos.x); l.setAttribute("y1", lastPos.y); l.setAttribute("x2", x); l.setAttribute("y2", y); l.setAttribute("stroke", THEME); l.setAttribute("stroke-width", "3"); document.getElementById('svg-canvas').appendChild(l); }
+                lastPos = { x, y }; currentStep++; if (currentStep === 25) finish();
+            } else if (idx > currentStep) { errors++; el.classList.add('node-error'); setTimeout(() => el.classList.remove('node-error'), 400); }
+        }
+
+        function finish() { clearInterval(timerInt); isInteractive = false; const dur = (Date.now() - startTime)/1000; sessionData[currentMode] = { duration: dur, errors }; setTimeout(() => { document.getElementById('screen-test').classList.add('hidden'); showStageResults(currentMode); }, 500); }
+
+        function calcPercentile(mode, time) {
+            const age = parseInt(document.getElementById('input-age').value), edu = document.getElementById('input-edu').value;
+            const set = NORMS[edu === 'high' ? 'high_edu' : 'low_edu'][mode];
+            const norm = set.find(g => age >= g.min && age <= g.max) || set[set.length-1];
+            const z = (norm.mean - time)/norm.sd; const t = 1/(1+0.2316419*Math.abs(z)), d = 0.3989423*Math.exp(-z*z/2);
+            let p = d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); if (z > 0) p = 1-p; return Math.round(p*100);
+        }
+
+        function showStageResults(mode) {
+            document.getElementById('screen-results').classList.remove('hidden');
+            const d = sessionData[mode], p = calcPercentile(mode, d.duration), isN = p >= 16, cls = isN ? "status-normal" : "status-abnormal";
+            document.getElementById('res-title').innerHTML = `Part ${mode} Results`;
+            document.getElementById('res-icon').className = `w-12 h-12 flex items-center justify-center rounded-full text-white font-black text-2xl shadow-lg ${cls}`;
+            document.getElementById('res-icon').textContent = isN ? "✓" : "!";
+            document.getElementById('stats-summary').innerHTML = `<div class="${cls} p-5 rounded-2xl border text-center shadow-md"><p class="text-[10px] font-black opacity-70 uppercase tracking-widest">Time / 时间</p><p class="text-2xl font-black">${d.duration.toFixed(2)}s</p></div><div class="${cls} p-5 rounded-2xl border text-center shadow-md"><p class="text-[10px] font-black opacity-70 uppercase tracking-widest">Errors / 错误</p><p class="text-2xl font-black">${d.errors}</p></div>`;
+            
+            document.getElementById('res-percentile-num').textContent = p+"th"; 
+            document.getElementById('res-percentile-num').className = `text-2xl font-black ${isN ? 'text-green-600' : 'text-black'}`;
+            document.getElementById('res-percentile-bar').style.width = p+"%"; 
+            document.getElementById('res-percentile-bar').className = `h-full ${isN ? 'bg-green-600' : 'bg-black'} transition-all duration-1000`;
+            
+            document.getElementById('percentile-explanation').innerHTML = `
+                <strong>Peer Comparison / 同龄人比较:</strong> You were faster than <strong>${p}%</strong> of people your age and education level. (50th is average).<br>
+                您的速度快于 <strong>${p}%</strong> 的同龄及同等学历人群。（50 为平均水平）。
+            `;
+            
+            const act = document.getElementById('action-box'); act.innerHTML = mode === 'A' ? `<button onclick="showInstructions('B')" class="btn-primary">Next Part / 下一部分</button>` : `<button onclick="showFinalReport()" class="btn-primary">Summary / 查看报告</button>`;
+        }
+
+        function showFinalReport() {
+            const timeA = sessionData.A.duration, timeB = sessionData.B.duration, ratio = timeB/timeA, pB = calcPercentile('B', timeB), isN = ratio < 3.0, cls = isN ? "status-normal" : "status-abnormal";
+            document.getElementById('res-title').innerHTML = "Summary Report"; document.getElementById('res-timestamp').textContent = new Date().toLocaleString('en-US',{hour12:false}); document.getElementById('res-timestamp').classList.remove('hidden');
+            document.getElementById('res-icon').className = `w-12 h-12 flex items-center justify-center rounded-full text-white font-black text-2xl shadow-lg ${cls}`; document.getElementById('res-icon').textContent = isN ? "✓" : "!";
+            document.getElementById('stats-summary').innerHTML = `<div class="col-span-2 ${cls} p-6 rounded-2xl flex justify-between items-center shadow-lg"><div><p class="text-[9px] font-black opacity-70 uppercase tracking-widest">Brain Shifting Ratio / 切换效率比</p><p class="text-4xl font-black tracking-tighter">${ratio.toFixed(2)}</p></div><div class="text-right"><span class="px-4 py-1.5 bg-white/30 rounded-full text-[10px] font-bold uppercase tracking-widest">${isN ? 'NORMAL' : 'ABNORMAL'}</span></div></div><div class="${cls} p-5 rounded-2xl text-center"><p class="text-[9px] font-black opacity-70 uppercase tracking-widest">A Time</p><p class="text-xl font-black">${timeA.toFixed(1)}s</p></div><div class="${cls} p-5 rounded-2xl text-center"><p class="text-[9px] font-black opacity-70 uppercase tracking-widest">B Time</p><p class="text-xl font-black">${timeB.toFixed(1)}s</p></div>`;
+            
+            document.getElementById('res-percentile-num').textContent = pB+"th"; 
+            document.getElementById('res-percentile-num').className = `text-2xl font-black ${isN ? 'text-green-600' : 'text-black'}`;
+            document.getElementById('res-percentile-bar').style.width = pB+"%"; 
+            document.getElementById('res-percentile-bar').className = `h-full ${isN ? 'bg-green-600' : 'bg-black'} transition-all duration-1000`;
+
+            document.getElementById('percentile-explanation').innerHTML = `
+                <div class="mb-3">
+                    <strong>Peer Comparison / 同龄人比较:</strong> You were faster than <strong>${pB}%</strong> of people your age and education. (50th is average).<br>
+                    您的综合反应速度快于 <strong>${pB}%</strong> 的同龄及同等学历人群。（50 为平均水平）。
+                </div>
+                <div class="pt-3 border-t border-slate-200">
+                    <strong>Clinical Note / 临床提示:</strong> OSA often makes it harder to "switch gears" (Ratio > 3.0). Treatment helps clear this fog.<br>
+                    OSA 常导致大脑较难快速“切换思路”（比率>3.0）。治疗有助于消除这种脑雾。
+                </div>
+            `;
+            
+            const act = document.getElementById('action-box'); act.innerHTML = `<button id="btn-save" class="btn-primary bg-slate-800">Export Result Photo / 保存图片</button><button onclick="location.reload()" class="w-full py-4 text-slate-400 font-bold text-[10px] uppercase">Restart Assessment / 重新开始</button>`;
+            document.getElementById('btn-save').onclick = () => { const btn = document.getElementById('btn-save'); btn.textContent="Capturing..."; html2canvas(document.getElementById('capture-area'),{backgroundColor:"#ffffff",scale:3,useCORS:true}).then(canvas => { document.getElementById('preview-img').src = canvas.toDataURL("image/png"); document.getElementById('save-overlay').style.display='flex'; btn.textContent="Export Result Photo / 保存图片"; }); };
+        }
+        function closeOverlay() { document.getElementById('save-overlay').style.display = 'none'; }
+    </script>
+</body>
+</html>
